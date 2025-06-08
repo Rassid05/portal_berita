@@ -33,9 +33,9 @@ if (!class_exists('AuthController')) {
             $stmt->close();
         }
 
-        public function getacces(){
-            $_SESSION['admin_logged_in'] = true;
-        }
+        // public function getacces(){
+        //     $_SESSION['admin_logged_in'] = true;
+        // }
 
         // public function getCurrentUser() {
         //     if (!isset($_SESSION['user_id'])) {

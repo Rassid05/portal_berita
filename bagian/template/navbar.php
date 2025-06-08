@@ -2,7 +2,6 @@
 include_once './controllers/AuthController.php';
 
 $auth = new AuthController($connect);
-$akses = $auth->getacces();
 
 ?>
 
@@ -13,14 +12,9 @@ $akses = $auth->getacces();
             
             <div class="flex items-center">
                 <div class="hidden md:flex items-center space-x-4">
-                    <?php
-                    if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
-                        echo '<a href="/portal-polmed/index.php?page=admin" class="nav-link px-3 py-2 rounded-md">Admin</a>';
-                    }
-                    ?>
                     <a href="/portal-polmed/index.php?page=home" class="nav-link px-3 py-2 rounded-md">Home</a>
-                    <a href="?page=nasional" class="nav-link px-3 py-2 rounded-md">Nasional</a>
-                    <a href="?page=internasional" class="nav-link px-3 py-2 rounded-md">Internasional</a>
+                    <!-- <a href="?page=nasional" class="nav-link px-3 py-2 rounded-md">Nasional</a>
+                    <a href="?page=internasional" class="nav-link px-3 py-2 rounded-md">Internasional</a> -->
                     <form id="search-form" class="flex items-center ml-2"> 
                         <label for="search-navbar-input" class="sr-only">Cari</label>
                         <input type="search" id="search-navbar-input" name="query" placeholder="Cari berita..."
