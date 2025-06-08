@@ -56,23 +56,31 @@ switch ($page) {
         }
         break;
         
-case 'logout':
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    $_SESSION = array();
-    if (ini_get("session.use_cookies")) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000,
-            $params["path"], $params["domain"],
-            $params["secure"], $params["httponly"]
-        );
-    }
-    session_destroy();
+    case 'logout':
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION = array();
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        session_destroy();
 
-    echo "Logout berhasil. Session dihancurkan.";
-    exit();
+        header("Location: login.php");
+        exit();
 
+    case 'unggah' :
+        include 'administrator/upload-berita.php';
+        break;
+
+    case 'perbaikan' :
+        include 'administrator/maintenance.php';
+        break;
+        
     default:
         include 'pages/404.php'; 
         break;

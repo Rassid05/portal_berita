@@ -4,7 +4,7 @@ include_once './controllers/AuthController.php';
 $auth = new AuthController($connect);
 $error = null;
 
-$akses = $auth->getacces();
+// $akses = $auth->getacces();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
@@ -115,11 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="login-header">
                 <h3><i class="fas fa-lock me-2"></i> ADMIN PANEL</h3>
                 <p class="mb-0">Silakan masuk untuk melanjutkan</p>
-                <?php
-                echo '<pre>';
-                print_r($_SESSION);
-                echo '</pre>';
-                ?>
             </div>
             
             <div class="login-body">

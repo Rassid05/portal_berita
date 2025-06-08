@@ -1,9 +1,38 @@
 <?php
-include_once './controllers/AuthController.php';
+include_once './controllers/BeritaControllers.php';
 
-$auth = new AuthController($connect);
-$akses = $auth->getacces();
+$beritaController = new BeritaControllers($connect);
+$hotNews = $beritaController->getBerita();
 
+function formatTimeTag($datetime) {
+            $bulanIndo = [
+                1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+
+            $timestamp = strtotime($datetime);
+
+            $hari = date('j', $timestamp);
+            $bulan = $bulanIndo[(int)date('n', $timestamp)];
+            $tahun = date('Y', $timestamp);
+            $jamMenit = date('H:i', $timestamp);
+
+            $isoDatetime = date('Y-m-d\TH:i:s', $timestamp);
+
+            $displayText = "{$hari} {$bulan} {$tahun}, {$jamMenit} WIB";
+
+            return "<span> <time datetime=\"{$isoDatetime}\">{$displayText}</time></span>";
+        }
+
+if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    if ($beritaController->deleteBerita($id)) {
+        header("Location: index.php?page=admin&msg=deleted");
+        exit;
+    } else {
+        echo "<div class='alert alert-danger'>Gagal menghapus data.</div>";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -80,7 +109,7 @@ $akses = $auth->getacces();
             <h4 class="text-center mb-4">Admin Panel</h4>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link active" href="#">
+                    <a class="nav-link active" href="?page=admin">
                         <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                     </a>
                 </li>
@@ -90,12 +119,12 @@ $akses = $auth->getacces();
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link" href="?page=unggah">
                         <i class="fas fa-upload me-2"></i> Upload Berita
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link" href="?page=perbaikan">
                         <i class="fas fa-cog me-2"></i> Pengaturan
                     </a>
                 </li>
@@ -109,59 +138,9 @@ $akses = $auth->getacces();
 
         <!-- Main Content -->
         <div class="main-content flex-grow-1 p-4">
-            <header class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-upload me-2"></i> Upload Berita</h2>
-                <?php
-echo '<pre>';
-print_r($_SESSION);
-echo '</pre>';
-?>
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle me-1"></i> Admin
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Profil</a></li>
-                        <li><a class="dropdown-item" href="#">Pengaturan</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#">Logout</a></li>
-                    </ul>
-                </div>
-            </header>
-
-            <!-- Form Upload Berita -->
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form>
-                        <div class="mb-3">
-                            <label for="judul" class="form-label">Judul Berita</label>
-                            <input type="text" class="form-control" id="judul" placeholder="Masukkan judul berita">
-                        </div>
-                        <div class="mb-3">
-                            <label for="kategori" class="form-label">Kategori</label>
-                            <select class="form-select" id="kategori">
-                                <option selected>Pilih kategori</option>
-                                <option value="politik">Politik</option>
-                                <option value="olahraga">Olahraga</option>
-                                <option value="teknologi">Teknologi</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="gambar" class="form-label">Gambar Utama</label>
-                            <input class="form-control" type="file" id="gambar">
-                        </div>
-                        <div class="mb-3">
-                            <label for="konten" class="form-label">Isi Berita</label>
-                            <textarea class="form-control" id="konten" rows="8" placeholder="Tulis konten berita di sini..."></textarea>
-                        </div>
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="reset" class="btn btn-outline-secondary">Reset</button>
-                            <button type="submit" class="btn btn-primary">Publish Berita</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
+            <?php if (isset($_GET['msg']) && $_GET['msg'] == 'deleted'): ?>
+                <div class="alert alert-success">Data berhasil dihapus.</div>
+            <?php endif; ?>
             <!-- Daftar Berita Terakhir (Opsional) -->
             <div class="card shadow-sm mt-4">
                 <div class="card-header bg-white">
@@ -180,26 +159,27 @@ echo '</pre>';
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>Pemilihan Presiden 2024</td>
-                                    <td><span class="badge bg-info">Politik</span></td>
-                                    <td>10 Jun 2024</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>Final Piala Dunia 2026</td>
-                                    <td><span class="badge bg-success">Olahraga</span></td>
-                                    <td>5 Jun 2024</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
+                                <?php $no = 1; ?>
+                                <?php foreach ($hotNews as $item): ?>
+                                    <tr>
+                                        <td><?= $no++ ?></td> <!-- nomor urut -->
+                                        <td><?= htmlspecialchars($item['judul']) ?></td>
+                                        <td><span class="badge bg-info"><?= htmlspecialchars($item['kategori']) ?></span></td>
+                                        <td><?= formatTimeTag($item['created_at']) ?> </td> 
+                                        <td>
+                                            <a href="?page=edit&id=<?= $item['id'] ?>" 
+                                            class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            
+                                            <a href="?page=admin&action=delete&id=<?= htmlspecialchars($item['id']) ?>"
+                                            class="btn btn-sm btn-outline-danger" 
+                                            onclick="return confirm('Yakin ingin menghapus data ini?');">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>

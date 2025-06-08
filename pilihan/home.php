@@ -1,3 +1,40 @@
+<?php
+include_once './controllers/BeritaControllers.php';
+
+$beritaController = new BeritaControllers($connect);
+// $hotNews = $beritaController->getBeritaOld();
+$totalHotNews = $beritaController->countBerita(); 
+$totalPages = ceil($totalHotNews / 4);
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max($page, 1);
+$offset = ($page - 1) * 4;
+$beritaaaa = $beritaController->getBeritaOld(4, $offset);
+// echo '<pre>';
+// var_dump($beritaaaa);
+// echo '</pre>';
+// exit;
+
+function formatTimeTag($datetime) {
+            $bulanIndo = [
+                1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+
+            $timestamp = strtotime($datetime);
+
+            $hari = date('j', $timestamp);
+            $bulan = $bulanIndo[(int)date('n', $timestamp)];
+            $tahun = date('Y', $timestamp);
+            $jamMenit = date('H:i', $timestamp);
+
+            $isoDatetime = date('Y-m-d\TH:i:s', $timestamp);
+
+            $displayText = "{$hari} {$bulan} {$tahun}, {$jamMenit} WIB";
+
+            return "<span>Dipublikasikan: <time datetime=\"{$isoDatetime}\">{$displayText}</time></span>";
+        }
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -38,30 +75,41 @@
 
             <?php include 'bagian/template/kategori.php';?>
 
-            <main class="lg:col-span-3 bg-white p-6 rounded-lg shadow-lg animate-fadeIn">
-                <article id="main-article-container">
-                    <h1 id="main-article-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                        Kenaikan Tarif Impor AS: Analisis Dampak dan Respon Pasar Global
-                    </h1>
-                    <div class="text-sm text-gray-600 mb-4">
-                        <span>Dipublikasikan: <time datetime="2025-05-29">29 Mei 2025, 13:15 WIB</time></span> |
-                        <span>Oleh: Analis MerahPutih</span>
-                    </div>
-                    <figure class="mb-6">
-                        <img src="./img/us.png" alt="Ilustrasi Kenaikan Tarif AS" class="w-full h-auto rounded-md shadow-md border-4 border-red-100">
-                        <figcaption class="text-center text-xs text-gray-500 mt-2">Gambar ilustrasi mengenai dampak kebijakan tarif impor AS.</figcaption>
-                    </figure>
-                    <div id="article-body-content" class="prose prose-lg max-w-none text-gray-700 space-y-4">
-                    </div>
-                    <div id="article-pagination-controls" class="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
-                        <button id="prev-article-part" class="article-part-pagination-button bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50">Sebelumnya</button>
-                        <span id="article-page-info" class="text-sm text-gray-600"></span>
-                        <button id="next-article-part" class="article-part-pagination-button bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50">Berikutnya</button>
-                    </div>
-                </article>
+            
+            <main class="lg:col-span-3 bg-white p-6 rounded-lg shadow-lg animate-fadeIn space-y-8">
+                <?php foreach ($beritaaaa as $item): ?>
+                    <article id="main-article-container" class="border border-red-100 rounded-lg p-4 shadow hover:shadow-lg transition duration-300">
+                        <h1 id="main-article-title" class="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                            <?= htmlspecialchars($item['judul']) ?>
+                        </h1>
+                        <div id="main-article-meta" class="text-sm text-gray-600 mb-4">
+                            <?= formatTimeTag($item['created_at']) ?> |
+                            <span>Oleh: <?= htmlspecialchars($item['author']) ?></span>
+                        </div>
+                        <figure id="main-article-figure" class="mb-4">
+                            <img src="./upload/<?= htmlspecialchars($item['image']) ?>" alt="Detail" class="w-full h-auto rounded-md shadow-md border-2 border-red-100 mb-3">
+                            <figcaption class="text-justify text-sm md:text-base text-gray-600 leading-relaxed">
+                                <?= 
+                                    nl2br(htmlspecialchars(
+                                        preg_replace('/\.\s+/', '.', $item['description'])
+                                    )) 
+                                ?>
+                            </figcaption>
+                        </figure>
+                    </article>
+                <?php endforeach; ?>
+                <div class="flex justify-center mt-8 space-x-2">
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <a href="?page=<?= $i ?>" 
+                        class="px-3 py-1 border <?= $i == $page ? 'bg-red-600 text-white' : 'bg-white text-red-600 border-red-600' ?> rounded hover:bg-red-700 hover:text-white transition">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
             </main>
+            
 
-    <?php include 'bagian/template/hotnews.php';?>
+                <?php include 'bagian/template/hotnews.php';?>
 
         </div>
     </div>
@@ -71,25 +119,6 @@
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        const articleContentParts = [
-
-            `
-            <p>Pemerintah Amerika Serikat telah mengonfirmasi rencana untuk memberlakukan <strong class="text-red-700">kenaikan tarif impor</strong> terhadap sejumlah kategori barang dari beberapa negara. Langkah ini diambil dengan alasan untuk melindungi produsen domestik dan menyeimbangkan neraca perdagangan. Namun, keputusan ini menuai berbagai reaksi dan kekhawatiran akan dampaknya terhadap stabilitas ekonomi global.</p>
-            <p>Para ekonom menyoroti potensi disrupsi pada rantai pasok global yang sudah rapuh pasca-pandemi. Kenaikan biaya impor diperkirakan akan <strong class="text-red-700">membebani konsumen</strong> melalui harga barang yang lebih tinggi dan dapat memicu inflasi di berbagai negara, termasuk di AS sendiri.</p>
-            `,
-    
-            `
-            <blockquote class="border-l-4 border-red-500 pl-4 italic text-gray-800">
-                "Ini adalah langkah yang berisiko tinggi. Meskipun ada argumen proteksionis, sejarah menunjukkan bahwa perang dagang jarang menguntungkan siapa pun dalam jangka panjang," ungkap seorang pengamat ekonomi.
-            </blockquote>
-            <p>Beberapa negara yang menjadi target utama kebijakan tarif ini telah menyatakan akan mempertimbangkan langkah balasan. Hal ini meningkatkan risiko eskalasi konflik dagang yang dapat <strong class="text-red-700">memperlambat laju pemulihan ekonomi</strong> dunia.</p>
-            `,
-       
-            `
-            <p>Di sisi lain, pendukung kebijakan ini berargumen bahwa tarif baru akan mendorong investasi di dalam negeri AS dan menciptakan lapangan kerja. Mereka juga menekankan pentingnya <strong class="text-red-700">kedaulatan ekonomi</strong> dan pengurangan ketergantungan pada pasokan dari luar negeri untuk barang-barang strategis.</p>
-            <p>Diskusi lebih lanjut dan negosiasi antar negara diharapkan dapat menemukan solusi yang tidak merugikan semua pihak dalam jangka panjang.</p>
-            `
-        ];
 
         let currentArticlePart = 1;
         const articleBodyContentDiv = document.getElementById('article-body-content');

@@ -16,6 +16,25 @@ if ($slug) {
     exit;
 }
 
+function formatTimeTag($datetime) {
+            $bulanIndo = [
+                1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+
+            $timestamp = strtotime($datetime);
+
+            $hari = date('j', $timestamp);
+            $bulan = $bulanIndo[(int)date('n', $timestamp)];
+            $tahun = date('Y', $timestamp);
+            $jamMenit = date('H:i', $timestamp);
+
+            $isoDatetime = date('Y-m-d\TH:i:s', $timestamp);
+
+            $displayText = "{$hari} {$bulan} {$tahun}, {$jamMenit} WIB";
+
+            return "<span>Dipublikasikan: <time datetime=\"{$isoDatetime}\">{$displayText}</time></span>";
+        }
 
 ?>
 
@@ -65,24 +84,26 @@ if ($slug) {
                         <?= htmlspecialchars($dataBerita['judul']) ?>
                     </h1>
                     <div id="main-article-meta" class="text-sm text-gray-600 mb-4">
-                        <span>Dipublikasikan: <time datetime="2025-05-29">3 juni 2025, 15:20 WIB</time></span> |
-                        <span>Oleh: Rassid Risda Sulpa</span>
+                        <?= formatTimeTag($dataBerita['created_at']) ?> |
+                        <span>Oleh: <?= htmlspecialchars($dataBerita['author']) ?></span>
                     </div>
                     <figure id="main-article-figure" class="mb-6">
-                        <img src="./img/polmed.jpeg" alt="Respons Mitra Dagang AS" class="w-full h-auto rounded-md shadow-md border-4 border-red-100">
-                        <figcaption class="text-center text-xs text-gray-500 mt-2"><?= htmlspecialchars($dataBerita['description']) ?></figcaption>
+                        <img src="./upload/<?= htmlspecialchars($dataBerita['image']) ?>" alt="Detail" class="w-full h-auto rounded-md shadow-md border-4 border-red-100">
+                        <figcaption class="w-full text-justify text-sm md:text-base text-gray-600 mt-3 px-0 leading-tight">
+                            <?= 
+                                // Proses teks: ganti titik+spasi dengan titik+baris baru
+                                nl2br(htmlspecialchars(
+                                    preg_replace('/\.\s+/', '.', $dataBerita['description'])
+                                )) 
+                            ?>
+                        </figcaption>
                     </figure>
                     
                     <div id="article-body-content" class="prose prose-lg max-w-none text-gray-700 space-y-4">
                     </div>
-
-                    <div id="article-pagination-controls" class="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
-                        <button id="prev-article-part" class="article-part-pagination-button bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50">Sebelumnya</button>
-                        <span id="article-page-info" class="text-sm text-gray-600"></span>
-                        <button id="next-article-part" class="article-part-pagination-button bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50">Berikutnya</button>
-                    </div>
                 </article>
             </main>
+
 
     <?php include 'bagian/template/hotnews.php';?>
 
@@ -97,31 +118,7 @@ if ($slug) {
     
         const currentArticleStaticData = { 
             title: <?= htmlspecialchars($dataBerita['judul']) ?>,
-            date: "29 Mei 2025, 15:00 WIB",
-            author: "Koresponden Internasional",
-            imageSrc: "https://via.placeholder.com/700x400.png?text=Respon+Mitra+Dagang+AS",
-            imageAlt: "Respons Mitra Dagang AS terhadap tarif baru",
-            imageCaption: "Berbagai negara mitra dagang AS menyatakan sikapnya."
         };
-        
-        const articleContentParts = [
-            `
-            <p>Pengumuman kenaikan tarif impor oleh Amerika Serikat telah memicu <strong class="text-red-700">reaksi beragam</strong> dari negara-negara mitra dagang utamanya di seluruh dunia. Banyak pihak menyatakan keprihatinan atas potensi eskalasi perang dagang dan dampaknya terhadap sistem perdagangan global yang sudah rapuh.</p>
-            <p>Uni Eropa, salah satu blok ekonomi terbesar, menyatakan kekecewaan dan sedang mempertimbangkan <strong class="text-red-700">langkah balasan yang proporsional</strong> jika dialog tidak menemukan titik temu. Juru bicara Komisi Eropa menekankan pentingnya perdagangan berbasis aturan dan multilateralisme.</p>
-            `,
-   
-            `
-            <p>Sementara itu, Tiongkok, yang telah terlibat dalam sengketa dagang dengan AS sebelumnya, mengambil sikap lebih hati-hati namun tegas. Beijing menyerukan AS untuk <strong class="text-red-700">mencabut kebijakan proteksionis</strong> tersebut dan kembali ke meja perundingan. Para analis melihat potensi pembalasan tarif dari Tiongkok terhadap produk-produk utama AS seperti kedelai dan pesawat terbang.</p>
-            <blockquote class="border-l-4 border-red-500 pl-4 italic text-gray-800">
-                "Kebijakan unilateral semacam ini tidak akan menyelesaikan masalah, malah akan memperburuk situasi ekonomi global," ujar seorang pejabat kementerian perdagangan Tiongkok.
-            </blockquote>
-            `,
-          
-            `
-            <p>Negara-negara lain seperti Kanada, Meksiko, Jepang, dan Korea Selatan juga menyatakan keprihatinan serupa. Beberapa di antaranya telah memulai konsultasi internal dan dengan aliansi dagang mereka untuk merumuskan respons bersama. Organisasi Perdagangan Dunia (WTO) didesak untuk memainkan peran mediasi yang lebih aktif dalam mencegah <strong class="text-red-700">disrupsi perdagangan lebih lanjut</strong>.</p>
-            <p>Pasar keuangan global juga bereaksi negatif terhadap berita ini, dengan indeks saham di berbagai bursa utama mengalami penurunan. Ketidakpastian ini diperkirakan akan berlanjut hingga ada kejelasan lebih lanjut mengenai implementasi tarif dan respons dari negara-negara terkait.</p>
-            `
-        ];
 
         let currentArticlePart = 1;
         const articleBodyContentDiv = document.getElementById('article-body-content');
