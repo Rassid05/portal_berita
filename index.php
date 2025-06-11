@@ -22,16 +22,6 @@ switch ($page) {
         include 'pilihan/home.php';
         break;
 
-
-
-    //kategori
-    case 'politik':
-        include 'bagian/template/navbar.php';
-        include 'kategori/politik.php';
-        break;
-
-
-
     //detail
     case 'respon':
         include 'bagian/template/navbar.php';
