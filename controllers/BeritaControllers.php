@@ -88,6 +88,65 @@ if (!class_exists('BeritaControllers')) {
 
             return $success;
         }
+
+        public function searchBeritaBySlug($query, $limit, $offset) {
+            $query = "%{$query}%";
+            $stmt = $this->connect->prepare("SELECT id, judul, description, slug, author, image, kategori, created_at 
+                                            FROM berita 
+                                            WHERE slug LIKE ? 
+                                            ORDER BY created_at DESC 
+                                            LIMIT ? OFFSET ?");
+            $stmt->bind_param("sii", $query, $limit, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $berita = [];
+            while ($row = $result->fetch_assoc()) {
+                $berita[] = $row;
+            }
+
+            $stmt->close();
+            return $berita;
+        }
+
+        public function countBeritaBySlug($query) {
+            $query = "%{$query}%";
+            $stmt = $this->connect->prepare("SELECT COUNT(*) as total FROM berita WHERE slug LIKE ?");
+            $stmt->bind_param("s", $query);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+
+            $stmt->close();
+            return $row['total'];
+        }
+
+        public function getBeritaByKategori($kategori, $limit, $offset) {
+            $stmt = $this->connect->prepare("SELECT id, judul, description, slug, author, image, kategori, created_at 
+                                            FROM berita WHERE kategori = ? ORDER BY created_at DESC LIMIT ? OFFSET ?");
+            $stmt->bind_param("sii", $kategori, $limit, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $berita = [];
+            while ($row = $result->fetch_assoc()) {
+                $berita[] = $row;
+            }
+
+            $stmt->close();
+            return $berita;
+        }
+
+        public function countBeritaByKategori($kategori) {
+            $stmt = $this->connect->prepare("SELECT COUNT(*) as total FROM berita WHERE kategori = ?");
+            $stmt->bind_param("s", $kategori);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+            return (int)$row['total'];
+        }
+
     }
 }
 

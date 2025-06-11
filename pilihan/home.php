@@ -2,12 +2,12 @@
 include_once './controllers/BeritaControllers.php';
 
 $beritaController = new BeritaControllers($connect);
-// $hotNews = $beritaController->getBeritaOld();
 $totalHotNews = $beritaController->countBerita(); 
 $totalPages = ceil($totalHotNews / 4);
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$page = max($page, 1);
-$offset = ($page - 1) * 4;
+$halaman = isset($_GET['halaman']) && is_numeric($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+$halaman = max($halaman, 1);
+
+$offset = ($halaman - 1) * 4;
 $beritaaaa = $beritaController->getBeritaOld(4, $offset);
 // echo '<pre>';
 // var_dump($beritaaaa);
@@ -33,6 +33,32 @@ function formatTimeTag($datetime) {
 
             return "<span>Dipublikasikan: <time datetime=\"{$isoDatetime}\">{$displayText}</time></span>";
         }
+
+if (isset($_GET['query']) && !empty($_GET['query'])) {
+    $query = $_GET['query'];
+    $beritaaaa = $beritaController->searchBeritaBySlug($query, 4, $offset);
+    $totalHotNews = $beritaController->countBeritaBySlug($query);
+    $totalPages = ceil($totalHotNews / 4);
+} else {
+    $beritaaaa = $beritaController->getBeritaOld(4, $offset);
+}
+
+if (isset($_GET['kategori']) && !empty($_GET['kategori'])) {
+    $kategori = $_GET['kategori'];
+    $beritaaaa = $beritaController->getBeritaByKategori($kategori, 4, $offset);
+    $totalHotNews = $beritaController->countBeritaByKategori($kategori);
+    $totalPages = ceil($totalHotNews / 4);
+} elseif (isset($_GET['query']) && !empty($_GET['query'])) {
+    $query = $_GET['query'];
+    $beritaaaa = $beritaController->searchBeritaBySlug($query, 4, $offset);
+    $totalHotNews = $beritaController->countBeritaBySlug($query);
+    $totalPages = ceil($totalHotNews / 4);
+} else {
+    $beritaaaa = $beritaController->getBeritaOld(4, $offset);
+    $totalHotNews = $beritaController->countBerita();
+    $totalPages = ceil($totalHotNews / 4);
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -42,6 +68,7 @@ function formatTimeTag($datetime) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Berita Merah Putih</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/svg+xml" href="http://www.w3.org/2000/svg">
     <style>
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -88,19 +115,35 @@ function formatTimeTag($datetime) {
                         </div>
                         <figure id="main-article-figure" class="mb-4">
                             <img src="./upload/<?= htmlspecialchars($item['image']) ?>" alt="Detail" class="w-full h-auto rounded-md shadow-md border-2 border-red-100 mb-3">
-                            <figcaption class="text-justify text-sm md:text-base text-gray-600 leading-relaxed">
-                                <?= 
-                                    nl2br(htmlspecialchars(
-                                        preg_replace('/\.\s+/', '.', $item['description'])
-                                    )) 
-                                ?>
+
+                            <?php
+                            $deskripsiFull = strip_tags($item['description']);
+                            $deskripsiPreview = $deskripsiFull;
+                            $isLong = false;
+                            if (strlen($deskripsiFull) > 200) {
+                                $deskripsiPreview = substr($deskripsiFull, 0, 200) . '...';
+                                $isLong = true;
+                            }
+                            ?>
+
+
+                            <figcaption class="text-justify text-sm md:text-base text-gray-600 leading-relaxed mb-2">
+                                <span class="deskripsi-preview">
+                                    <?= nl2br(htmlspecialchars($deskripsiPreview)) ?>
+                                </span>
+                                <?php if ($isLong): ?>
+                                    <span class="deskripsi-full hidden">
+                                        <?= nl2br(htmlspecialchars($deskripsiFull)) ?>
+                                    </span>
+                                    <a href="javascript:void(0);" class="text-red-600 hover:underline baca-selengkapnya">Baca Selengkapnya</a>
+                                <?php endif; ?>
                             </figcaption>
                         </figure>
                     </article>
                 <?php endforeach; ?>
                 <div class="flex justify-center mt-8 space-x-2">
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <a href="?page=<?= $i ?>" 
+                        <a href="?page=home&halaman=<?= $i ?>" 
                         class="px-3 py-1 border <?= $i == $page ? 'bg-red-600 text-white' : 'bg-white text-red-600 border-red-600' ?> rounded hover:bg-red-700 hover:text-white transition">
                             <?= $i ?>
                         </a>
@@ -117,136 +160,116 @@ function formatTimeTag($datetime) {
   <?php include 'bagian/template/footer.php';?>
 
     <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.baca-selengkapnya');
 
+            console.log('Buttons found:', document.querySelectorAll('.baca-selengkapnya').length);
 
-        let currentArticlePart = 1;
-        const articleBodyContentDiv = document.getElementById('article-body-content');
-        const prevArticlePartButton = document.getElementById('prev-article-part');
-        const nextArticlePartButton = document.getElementById('next-article-part');
-        const articlePageInfoSpan = document.getElementById('article-page-info');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const figcaption = this.closest('figcaption');
+                    const preview = figcaption.querySelector('.deskripsi-preview');
+                    const full = figcaption.querySelector('.deskripsi-full');
 
-        function displayArticlePart(pageNumber) {
-            if (!articleBodyContentDiv || pageNumber < 1 || pageNumber > articleContentParts.length) {
-                return;
-            }
-            currentArticlePart = pageNumber;
-            articleBodyContentDiv.innerHTML = articleContentParts[pageNumber - 1];
-            
-            articleBodyContentDiv.classList.remove('animate-fadeIn');
-            void articleBodyContentDiv.offsetWidth;
-            articleBodyContentDiv.classList.add('animate-fadeIn');
-
-            if (articlePageInfoSpan) {
-                 articlePageInfoSpan.textContent = `Bagian ${currentArticlePart} dari ${articleContentParts.length}`;
-            }
-            if (prevArticlePartButton) {
-                prevArticlePartButton.disabled = currentArticlePart === 1;
-            }
-            if (nextArticlePartButton) {
-                nextArticlePartButton.disabled = currentArticlePart === articleContentParts.length;
-            }
-        }
-        
-        if (prevArticlePartButton && nextArticlePartButton) {
-            prevArticlePartButton.addEventListener('click', () => {
-                if (currentArticlePart > 1) {
-                    displayArticlePart(currentArticlePart - 1);
-                }
-            });
-
-            nextArticlePartButton.addEventListener('click', () => {
-                if (currentArticlePart < articleContentParts.length) {
-                    displayArticlePart(currentArticlePart + 1);
-                }
-            });
-        }
-        if (articleContentParts.length > 0) {
-            displayArticlePart(1);
-        } else {
-            const paginationControls = document.getElementById('article-pagination-controls');
-            if (paginationControls) paginationControls.style.display = 'none';
-        }
-
-
-        const searchForm = document.getElementById('search-form');
-        const searchInput = document.getElementById('search-navbar-input');
-        const searchMessage = document.getElementById('search-message');
-        const hotNewsListContainer = document.getElementById('hot-news-list');
-        const allHotNewsItems = Array.from(hotNewsListContainer.querySelectorAll('.hot-news-item'));
-        const resetSearchButton = document.getElementById('reset-search-button');
-        const mainArticleContainer = document.getElementById('main-article-container');
-
-        if (searchForm) {
-            searchForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const query = searchInput.value.toLowerCase().trim();
-                searchMessage.textContent = '';
-                resetSearchButton.classList.remove('hidden');
-                let mainArticleFound = false;
-                let hotNewsFoundCount = 0;
-                mainArticleContainer.classList.remove('search-highlight-article');
-                allHotNewsItems.forEach(item => {
-                    item.classList.remove('hidden-by-search', 'search-highlight-hotnews');
-                });
-
-
-                if (query === "") {
-                    searchMessage.textContent = "Silakan masukkan kata kunci pencarian.";
-                    return;
-                }
-
-                const mainArticleTitleEl = document.getElementById('main-article-title');
-                if (mainArticleTitleEl && mainArticleTitleEl.textContent.toLowerCase().includes(query)) {
-                    mainArticleContainer.classList.add('search-highlight-article');
-                    mainArticleFound = true;
-                }
-
-                const fullArticleTextForSearch = articleContentParts.join(" ").toLowerCase();
-                if (fullArticleTextForSearch.includes(query)) {
-                    mainArticleContainer.classList.add('search-highlight-article');
-                    mainArticleFound = true; 
-                }
-                
-                allHotNewsItems.forEach(item => {
-                    const titleElement = item.querySelector('.hot-news-title');
-                    if (titleElement) {
-                        const title = titleElement.textContent.toLowerCase();
-                        if (title.includes(query)) {
-                            item.classList.remove('hidden-by-search');
-                            item.classList.add('search-highlight-hotnews');
-                            hotNewsFoundCount++;
-                        } else {
-                            item.classList.add('hidden-by-search');
-                        }
+                    // cek apakah elemen ditemukan
+                    if (full && preview) {
+                        preview.style.display = 'none';
+                        full.classList.remove('hidden');
+                        this.style.display = 'none';
+                    } else {
+                        console.error('Elemen deskripsi-preview atau deskripsi-full tidak ditemukan.');
                     }
                 });
-
-                if (!mainArticleFound && hotNewsFoundCount === 0) {
-                    searchMessage.textContent = `Tidak ada hasil ditemukan untuk "${searchInput.value}".`;
-                } else {
-                    let foundLocations = [];
-                    if (mainArticleFound) foundLocations.push("artikel utama");
-                    if (hotNewsFoundCount > 0) foundLocations.push("Hot News");
-                    searchMessage.textContent = `Hasil untuk "${searchInput.value}" ditemukan di: ${foundLocations.join(' dan ')}.`;
-                }
             });
-        }
 
-        if (resetSearchButton) {
-            resetSearchButton.addEventListener('click', function() {
-                searchInput.value = '';
-                searchMessage.textContent = '';
-                allHotNewsItems.forEach(item => {
-                    item.classList.remove('hidden-by-search', 'search-highlight-hotnews');
+            const searchForm = document.getElementById('search-form');
+            const searchInput = document.getElementById('search-navbar-input');
+            const searchMessage = document.getElementById('search-message');
+            const hotNewsListContainer = document.getElementById('hot-news-list');
+            const allHotNewsItems = Array.from(hotNewsListContainer.querySelectorAll('.hot-news-item'));
+            const resetSearchButton = document.getElementById('reset-search-button');
+            const mainArticleContainer = document.getElementById('main-article-container');
+
+            // if (searchForm) {
+            //     searchForm.addEventListener('submit', function(event) {
+            //         event.preventDefault();
+
+            //         const query = searchInput.value.toLowerCase().trim();
+            //         searchMessage.textContent = '';
+            //         resetSearchButton.classList.remove('hidden');
+
+            //         let mainArticleFound = false;
+            //         let hotNewsFoundCount = 0;
+
+            //         mainArticleContainer.classList.remove('search-highlight-article');
+
+            //         allHotNewsItems.forEach(item => {
+            //             item.classList.remove('hidden-by-search', 'search-highlight-hotnews');
+            //         });
+
+            //         if (query === "") {
+            //             searchMessage.textContent = "Silakan masukkan kata kunci pencarian.";
+            //             return;
+            //         }
+
+            //         const mainArticleTitleEl = document.getElementById('main-article-title');
+            //         if (mainArticleTitleEl && mainArticleTitleEl.textContent.toLowerCase().includes(query)) {
+            //             mainArticleContainer.classList.add('search-highlight-article');
+            //             mainArticleFound = true;
+            //         }
+
+            //         // Periksa apakah variable articleContentParts memang ada
+            //         if (typeof articleContentParts !== 'undefined') {
+            //             const fullArticleTextForSearch = articleContentParts.join(" ").toLowerCase();
+            //             if (fullArticleTextForSearch.includes(query)) {
+            //                 mainArticleContainer.classList.add('search-highlight-article');
+            //                 mainArticleFound = true;
+            //             }
+            //         }
+
+            //         allHotNewsItems.forEach(item => {
+            //             const titleElement = item.querySelector('.hot-news-title');
+            //             if (titleElement) {
+            //                 const title = titleElement.textContent.toLowerCase();
+            //                 if (title.includes(query)) {
+            //                     item.classList.remove('hidden-by-search');
+            //                     item.classList.add('search-highlight-hotnews');
+            //                     hotNewsFoundCount++;
+            //                 } else {
+            //                     item.classList.add('hidden-by-search');
+            //                 }
+            //             }
+            //         });
+
+            //         if (!mainArticleFound && hotNewsFoundCount === 0) {
+            //             searchMessage.textContent = `Tidak ada hasil ditemukan untuk "${searchInput.value}".`;
+            //         } else {
+            //             let foundLocations = [];
+            //             if (mainArticleFound) foundLocations.push("artikel utama");
+            //             if (hotNewsFoundCount > 0) foundLocations.push("Hot News");
+
+            //             searchMessage.textContent = `Hasil untuk "${searchInput.value}" ditemukan di: ${foundLocations.join(' dan ')}.`;
+            //         }
+            //     }); // TUTUP submit handler
+            // } 
+
+            // Ini bagian reset search button (tidak boleh di dalam if (searchForm))
+            if (resetSearchButton) {
+                resetSearchButton.addEventListener('click', function() {
+                    searchInput.value = '';
+                    searchMessage.textContent = '';
+
+                    allHotNewsItems.forEach(item => {
+                        item.classList.remove('hidden-by-search', 'search-highlight-hotnews');
+                    });
+
+                    mainArticleContainer.classList.remove('search-highlight-article');
+                    resetSearchButton.classList.add('hidden');
                 });
-                mainArticleContainer.classList.remove('search-highlight-article');
-                resetSearchButton.classList.add('hidden');
-               
-            });
-        }
-
+            }
+        });
     </script>
+
 
 </body>
 </html>

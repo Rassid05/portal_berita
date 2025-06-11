@@ -3,7 +3,7 @@ include_once './controllers/BeritaControllers.php';
 
 $beritaController = new BeritaControllers($connect);
 
-$perPage = 5;
+$perPage = 7;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $page = max($page, 1);
 
@@ -42,7 +42,7 @@ function truncateText($text, $maxLength) {
         </div>
 
         <!-- Pagination Controls -->
-        <div class="flex justify-center mt-4 space-x-2">
+        <!-- <div class="flex justify-center mt-4 space-x-2">
             <?php 
             $currentSlug = isset($_GET['slug']) ? $_GET['slug'] : '';
             for ($i = 1; $i <= $totalPages; $i++): 
@@ -52,6 +52,6 @@ function truncateText($text, $maxLength) {
                     <?= $i ?>
                 </a>
             <?php endfor; ?>
-        </div>
+        </div> -->
     </div>
 </aside>
